@@ -1,5 +1,6 @@
 import {TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams} from "@ngx-translate/core";
 import {Observable} from "rxjs/internal/Observable";
+import {map} from "rxjs/operators";
 import {HttpClient} from "@angular/common/http";
 
 function isInEditor() {
@@ -22,7 +23,18 @@ class BablicTranslateLoader implements TranslateLoader {
                 subscriber.complete();
             });
         }
-        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json`);
+        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json`).pipe(
+            map((json) => {
+                const empties = json["__"];
+                if (empties) {
+                    empties.forEach((emp) => {
+                        json[emp] = emp;
+                    });
+                    delete json["__"];
+                }
+                return json;
+            })
+        );
     }
 }
 
