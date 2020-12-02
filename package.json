@@ -18,7 +18,6 @@
   "homepage": "https://github.com/IshaiJaffe/ngx-bablic#readme",
   "devDependencies": {
     "@angular/common": "^11.0.2",
-    "@angular/core": ">=6.0.0-rc.0",
     "@ngx-translate/core": ">=10.0.0",
     "ng-packager": "^1.0.0",
     "rxjs": ">=6.0.0-beta.1",
@@ -27,7 +26,6 @@
   "peerDependencies": {
     "@ngx-translate/core": ">=10.0.0",
     "@angular/common": ">=6.0.0",
-    "@angular/core": ">=6.0.0-rc.0",
     "rxjs": ">=6.0.0-beta.1"
   }
 }

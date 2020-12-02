@@ -1,7 +1,6 @@
 import {TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams} from "@ngx-translate/core";
 import {Observable} from "rxjs/internal/Observable";
 import {HttpClient} from "@angular/common/http";
-import {Provider} from "@angular/core";
 
 function isInEditor() {
     try {
@@ -12,10 +11,10 @@ function isInEditor() {
 }
 
 class BablicTranslateLoader implements TranslateLoader {
-    constructor(private http: HttpClient, private siteId: string) {
+    constructor(private http: HttpClient, private siteId: string, private isDebug: boolean) {
 
     }
-    getTranslation(lang: string): Observable<any>{
+    getTranslation(lang: string): any{
         if (isInEditor()) {
             return new Observable<any>((subscriber) => {
                 // in editor, return empty
@@ -23,7 +22,7 @@ class BablicTranslateLoader implements TranslateLoader {
                 subscriber.complete();
             });
         }
-        return this.http.get(`https://c.bablic.com/sites/${this.siteId}/ngx.${lang}.json`);
+        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json`);
     }
 }
 
@@ -31,7 +30,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
     private _timeout: any;
     private isInEditor: boolean;
     private lang: string;
-    constructor(private http: HttpClient, private siteId: string) {
+    constructor(private http: HttpClient, private siteId: string, private isDebug: boolean) {
         this.isInEditor = isInEditor();
     }
 
@@ -56,7 +55,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
     }
 
     addMissing(key: string, params: any) {
-        this.bulk.add({key, params});
+        this.bulk.push({key, params});
         clearTimeout(this._timeout);
         this._timeout = setTimeout(() => this.flush(), 1000);
     }
@@ -65,7 +64,8 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
         const tempBulk = this.bulk;
         this.bulk = [];
         try {
-            await this.http.post(`https://e2.bablic.com/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.href)}`,
+            const domain = this.isDebug ? "staging.bablic.com" : "e2.bablic.com";
+            await this.http.post(`https://${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.href)}`,
                 tempBulk).toPromise();
         } catch (e) {
             console.error(e);
@@ -77,21 +77,13 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
 }
 
 interface NgxTranslateConfig {
-    loader: Provider;
-    missingTranslationHandler: Provider;
+    loaderFactory: Function;
+    missingTranslationHandlerFactory: Function;
 }
-export default function (siteId: string): NgxTranslateConfig {
+export default function (siteId: string, isDebug = false): NgxTranslateConfig {
     return {
-        loader: {
-            provide: TranslateLoader,
-            deps: [HttpClient],
-            useFactory: (http: HttpClient) => new BablicTranslateLoader(http, siteId),
-        },
-        missingTranslationHandler: {
-            provide: MissingTranslationHandler,
-            deps: [HttpClient],
-            useFactory: (http: HttpClient) => new BablicMissingTranslationHandler(http, siteId),
-        }
+        loaderFactory: (http: HttpClient) => new BablicTranslateLoader(http, siteId, isDebug),
+        missingTranslationHandlerFactory: (http: HttpClient) => new BablicMissingTranslationHandler(http, siteId, isDebug),
     };
 }
 
