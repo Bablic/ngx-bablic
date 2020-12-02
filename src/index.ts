@@ -41,7 +41,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
         const service = params.translateService;
         const lang = service.currentLang || service.defaultLang;
         this.lang = lang;
-        const translations = service.store.translations[lang];
+        const translations = service.store.translations[lang] || {};
         translations[params.key] = params.key;
         const parsed = service.getParsedResult(translations, params.key, params.interpolateParams);
         if (this.isInEditor) {
