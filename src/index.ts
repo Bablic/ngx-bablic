@@ -23,7 +23,8 @@ class BablicTranslateLoader implements TranslateLoader {
                 subscriber.complete();
             });
         }
-        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json`).pipe(
+        const revision = localStorage && localStorage.getItem("_br");
+        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json${revision ? "?r=" + revision : ""}`).pipe(
             map((json) => {
                 const empties = json["__"];
                 if (empties) {
@@ -76,9 +77,12 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
         const tempBulk = this.bulk;
         this.bulk = [];
         try {
-            const domain = this.isDebug ? "staging.bablic.com" : "e2.bablic.com";
-            await this.http.post(`https://${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.href)}`,
+            const domain = this.isDebug ? "https://staging.bablic.com" : "https://e2.bablic.com";
+            const updated = await this.http.post(`${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.host + location.pathname)}`,
                 tempBulk).toPromise();
+            if (updated && updated.updated) {
+                localStorage.setItem("_br", Date.now());
+            }
         } catch (e) {
             console.error(e);
             this.bulk = [...tempBulk, ...this.bulk];
