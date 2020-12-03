@@ -81,7 +81,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
             const updated = await this.http.post(`${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.host + location.pathname)}`,
                 tempBulk).toPromise();
             if (updated && updated.updated) {
-                localStorage.setItem("_br", Date.now());
+                localStorage.setItem("_br", Date.now() + "");
             }
         } catch (e) {
             console.error(e);
