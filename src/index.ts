@@ -78,9 +78,9 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
         this.bulk = [];
         try {
             const domain = this.isDebug ? "https://staging.bablic.com" : "https://e2.bablic.com";
-            const updated = await this.http.post(`${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.host + location.pathname)}`,
+            const reply = await this.http.post(`${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.host + location.pathname)}`,
                 tempBulk).toPromise();
-            if (updated && updated.updated) {
+            if (reply && (reply as any).updated) {
                 localStorage.setItem("_br", Date.now() + "");
             }
         } catch (e) {
