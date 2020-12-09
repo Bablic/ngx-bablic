@@ -1,4 +1,9 @@
-import {TranslateLoader, MissingTranslationHandler, MissingTranslationHandlerParams} from "@ngx-translate/core";
+import {
+    TranslateLoader,
+    MissingTranslationHandler,
+    MissingTranslationHandlerParams,
+    TranslateService
+} from "@ngx-translate/core";
 import {Observable} from "rxjs/internal/Observable";
 import {map} from "rxjs/operators";
 import {HttpClient} from "@angular/common/http";
@@ -10,6 +15,8 @@ function isInEditor() {
         return false;
     }
 }
+
+let cacheBraker: string = "";
 
 class BablicTranslateLoader implements TranslateLoader {
     constructor(private http: HttpClient, private siteId: string, private isDebug: boolean) {
@@ -23,8 +30,7 @@ class BablicTranslateLoader implements TranslateLoader {
                 subscriber.complete();
             });
         }
-        const revision = localStorage && localStorage.getItem("_br");
-        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json${revision ? "?r=" + revision : ""}`).pipe(
+        return this.http.get(`https://c.bablic.com${this.isDebug?"/test":""}/sites/${this.siteId}/ngx.${lang}.json${cacheBraker ? "?r=" + cacheBraker : ""}`).pipe(
             map((json) => {
                 const empties = json["__"];
                 if (empties) {
@@ -43,6 +49,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
     private _timeout: any;
     private isInEditor: boolean;
     private lang: string;
+    private service: TranslateService;
     constructor(private http: HttpClient, private siteId: string, private isDebug: boolean) {
         this.isInEditor = isInEditor();
     }
@@ -52,6 +59,7 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
     handle(params: MissingTranslationHandlerParams): any {
         // return default
         const service = params.translateService;
+        this.service = service;
         const lang = service.currentLang || service.defaultLang;
         this.lang = lang;
         const translations = service.store.translations[lang] || {};
@@ -81,7 +89,10 @@ class BablicMissingTranslationHandler implements MissingTranslationHandler {
             const reply = await this.http.post(`${domain}/api/engine/ngx-report?s=${this.siteId}&l=${this.lang}&uri=${encodeURIComponent(location.host + location.pathname)}`,
                 tempBulk).toPromise();
             if (reply && (reply as any).updated) {
-                localStorage.setItem("_br", Date.now() + "");
+                cacheBraker =  Date.now() + "";
+                // if (this.service) {
+                //     this.service.resetLang()
+                // }
             }
         } catch (e) {
             console.error(e);
